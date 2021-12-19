@@ -1,0 +1,28 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-check
+  namespace: sample-app
+spec:
+  selector:
+    matchLabels:
+      app: user
+  jwtRules:
+    - issuer: "http://<MASTER-IP>:30034/auth/realms/kc-sample"
+      jwksUri: "http://<MASTER-IP>:30034/auth/realms/kc-sample/protocol/openid-connect/certs"
+      outputPayloadToHeader: jwt-parsed
+      # forwardOriginalToken: true
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: user-check
+  namespace: sample-app
+spec:
+  selector:
+    matchLabels:
+      app: user
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]

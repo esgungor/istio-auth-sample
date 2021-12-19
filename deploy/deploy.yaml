@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: sample-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-deployment
+  namespace: sample-app
+  labels:
+    app: user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      containers:
+        - name: user
+          image: enginsgungor/sample-user:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-svc
+  namespace: sample-app
+spec:
+  selector:
+    app: user
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: user-vsvc
+  namespace: sample-app
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - sample-app-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /user
+      route:
+        - destination:
+            host: user-svc
+            port:
+              number: 3000
